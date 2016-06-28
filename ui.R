@@ -5,7 +5,6 @@ shinyUI(fluidPage(
   
   hr(),
   mainPanel(
-    plotOutput("SampleMeanPlot"),
-    plotOutput("SampleDistPlot")
+    plotOutput("SampleMeanPlot")
   )
 ))

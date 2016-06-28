@@ -103,8 +103,10 @@ shinyServer(function(input, output, session) {
     output$SampleMeanPlot <- renderPlot({
       ##iter_delay()
       ##invalidateLater(100, session)
+      
       over.hist.pop.sample_2(Pop,vals$Sam,vals$SAVEMEANS,step=2,color="red",
                              title="Overlaid Histograms for Population and Sample",drawmean=TRUE)
+      
     })
     
 })
