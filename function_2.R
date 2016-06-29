@@ -41,3 +41,21 @@ over.hist.pop.sample_2<-function(Pop,Sam,mean_Sam,step=5,color="red",title="",dr
     mean(Sam)
   }
 }
+
+over.hist.pop<-function(Pop,step=5,color="red",title="",drawmean=FALSE){
+  NP<-length(Pop)
+  ra<-range(c(floor(range(Pop)),ceiling(range(Pop))))
+  lr<-ra[1]
+  ur<-ra[2]
+  histP<-hist(Pop,breaks=(lr:ur),plot=FALSE)
+  plot(range(lr,ur),range(0,max(histP$counts)),t="n",
+       bty="n",xlab="",ylab="",main=title)
+  segments(lr,0,ur,0,col="black")
+  for(i in lr:ur) {segments(i,0,i,max(histP$counts),col="grey")
+  }
+  plot(histP,add=TRUE)
+  
+}
+
+
+#}

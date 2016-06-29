@@ -1,22 +1,8 @@
 ## loading necessary libraries
-library(shiny)
+library(shiny) 
 
-## setting the parameters for the population
-# set.seed(42) # sets the point at which random numbers are read (like in Table B) 
-# NP<-100000 # the number of observations in the population
-# mu<-0 # the population mean
-# sigma<-4 # the population standard deviation
-# Pop<-rnorm(NP,mu,sigma)
-# Pop<-c(Pop,-Pop)
-# 
-# ## simulation params 
-# delay <- 0.25
-# ns <- 50
-# maxIter <- ns
-
-
-## Professor Doru's plot function
-over.hist.pop.sample_2<-function(Pop,Sam,mean_Sam,step=5,color="red",title="",drawmean=FALSE) {
+## Professor Doru's plot function (modified to graph samples and sample means together)
+over.hist.pop.sample_combined<-function(Pop,Sam,mean_Sam,step=5,color="red",title="",drawmean=FALSE) {
   NP<-length(Pop)
   NS<-length(Sam)
   N_MS<-length(mean_Sam)
@@ -63,50 +49,67 @@ over.hist.pop.sample_2<-function(Pop,Sam,mean_Sam,step=5,color="red",title="",dr
 ## setting parameters for he simulation 
 set.seed(42) # sets the point at which random numbers are read (like in Table B) 
 NP<-100000 # the number of observations in the population
-mu<-0 # the population mean
+mu<-3 # the population mean
 sigma<-4 # the population standard deviation
 Pop<-rnorm(NP,mu,sigma)
 Pop<-c(Pop,-Pop)
+ns<-50
 
 ## simulation params 
 delay <- 0.25
-ns <- 50
-maxIter <- ns
+n_sims <- 50
+maxIter <- n_sims
 
 ## Server function for the app
 shinyServer(function(input, output, session) {
+  runSimPlot <- reactive({
+    if (input$action %% 2 == 1){
       vals <- reactiveValues(Sam = NULL, SAVEMEANS = NULL, counter = 0)
-      ##iter_delay <- reactiveTimer()
-      
+
       # Do the actual computation here.
       observe({
         isolate({
           # This is where we do the expensive computing
-          ##Sys.sleep(delay)
-          ##iter_delay()
-          ##invalidateLater(1000, session)
-          vals$Sam <- sample(Pop,n)
+          vals$Sam <- sample(Pop,ns)
           vals$SAVEMEANS <- c(vals$SAVEMEANS, mean(vals$Sam))
-          # Increment the counter
-          vals$counter <- vals$counter + 1 
+  
+          vals$counter <- vals$counter + 1
+          #print(vals$counter)
+          #print(input$action)
+          
         })
-        
+
         # If we're not done yet, then schedule this block to execute again ASAP.
         # Note that we can be interrupted by other reactive updates to, for
         # instance, update a text output.
+        samp <- vals$Sam
+        save_means <- vals$SAVEMEANS
+        
         if (isolate(vals$counter) < maxIter){
-          invalidateLater(250, session)
+          invalidateLater(250)
         }
+        ##return(over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color="red",
+        ##                                     title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
+        ##print(input$action)
       })
+      print(input$action)
+      print(isolate(vals$Sam))
       
-    
-    output$SampleMeanPlot <- renderPlot({
-      ##iter_delay()
-      ##invalidateLater(100, session)
+      return(over.hist.pop.sample_combined(Pop,samp,save_means,step=2,color="red",
+                                           title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
+      # return(over.hist.pop(Pop,step=2,color="red",
+      #                                      title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
       
-      over.hist.pop.sample_2(Pop,vals$Sam,vals$SAVEMEANS,step=2,color="red",
-                             title="Overlaid Histograms for Population and Sample",drawmean=TRUE)
-      
-    })
-    
+    }
+    else {
+      print(input$action)
+
+      return(over.hist.pop(Pop,step=2,color="red",
+                           title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
+    }
+  })
+
+  output$SampleMeanPlot <- renderPlot({
+    runSimPlot() 
+  })
 })
