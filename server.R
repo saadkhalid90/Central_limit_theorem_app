@@ -63,50 +63,43 @@ maxIter <- n_sims
 ## Server function for the app
 shinyServer(function(input, output, session) {
   runSimPlot <- reactive({
-    if (input$action %% 2 == 1){
+    
       vals <- reactiveValues(Sam = NULL, SAVEMEANS = NULL, counter = 0)
 
       # Do the actual computation here.
       observe({
-        isolate({
-          # This is where we do the expensive computing
-          vals$Sam <- sample(Pop,ns)
-          vals$SAVEMEANS <- c(vals$SAVEMEANS, mean(vals$Sam))
+        if (input$action %% 2 == 1){
+          isolate({
+            # This is where we do the expensive computing
+            vals$Sam <- sample(Pop,ns)
+            vals$SAVEMEANS <- c(vals$SAVEMEANS, mean(vals$Sam))
+    
+            vals$counter <- vals$counter + 1
+            #print(vals$counter)
+            #print(input$action)
+            
+          })
   
-          vals$counter <- vals$counter + 1
-          #print(vals$counter)
-          #print(input$action)
+          # If we're not done yet, then schedule this block to execute again ASAP.
+          # Note that we can be interrupted by other reactive updates to, for
+          # instance, update a text output.
+          if (isolate(vals$counter) < maxIter){
+            invalidateLater(250)
+          }
           
-        })
-
-        # If we're not done yet, then schedule this block to execute again ASAP.
-        # Note that we can be interrupted by other reactive updates to, for
-        # instance, update a text output.
-        samp <- vals$Sam
-        save_means <- vals$SAVEMEANS
-        
-        if (isolate(vals$counter) < maxIter){
-          invalidateLater(250)
+          return(over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color="red",
+                                               title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
+          ##print(input$action)
         }
-        ##return(over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color="red",
-        ##                                     title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-        ##print(input$action)
-      })
-      print(input$action)
-      print(isolate(vals$Sam))
-      
-      return(over.hist.pop.sample_combined(Pop,samp,save_means,step=2,color="red",
-                                           title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-      # return(over.hist.pop(Pop,step=2,color="red",
-      #                                      title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-      
-    }
-    else {
-      print(input$action)
-
-      return(over.hist.pop(Pop,step=2,color="red",
-                           title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-    }
+        else {
+          print(input$action)
+          vals$Sam <- NULL
+          vals$SAVEMEANS <- NULL 
+          vals$counter = 0
+          return(over.hist.pop(Pop,step=2,color="red",
+                               title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
+        }
+    })
   })
 
   output$SampleMeanPlot <- renderPlot({
