@@ -36,14 +36,29 @@ over.hist.pop.sample_combined<-function(Pop,Sam,mean_Sam,step=5,color="red",titl
   }
   f_ms<-step*NP/(N_MS*10)
   for(i in 1:N_MS) {
-    points(x=X_MS[i],y=H_MS[X_MS[i]+0.5-lr],col="blue",pch=18)
+    points(x=X_MS[i],y=H_MS[X_MS[i]+0.5-lr],col=rgb(0,0,1,alpha=0.8),pch=18,cex=1.5)
     H_MS[X_MS[i]+0.5-lr]<-H_MS[X_MS[i]+0.5-lr]+f_ms
   }
   if(drawmean==TRUE) {
-    abline(v=mean(Sam),col=color,lwd=3,lty=6)
+    abline(v=mean(Sam),col="red",lwd=2.5,lty=6)
     abline(v=mean(mean_Sam),col="blue",lwd=2)
     mean(Sam)
   }
+}
+
+## function for just the population histogram 
+over.hist.pop<-function(Pop,step=5,color="red",title="",drawmean=FALSE){
+  NP<-length(Pop)
+  ra<-range(c(floor(range(Pop)),ceiling(range(Pop))))
+  lr<-ra[1]
+  ur<-ra[2]
+  histP<-hist(Pop,breaks=(lr:ur),plot=FALSE)
+  plot(range(lr,ur),range(0,max(histP$counts)),t="n",
+       bty="n",xlab="",ylab="",main=title)
+  segments(lr,0,ur,0,col="black")
+  for(i in lr:ur) {segments(i,0,i,max(histP$counts),col="grey")
+  }
+  plot(histP,add=TRUE)
 }
 
 ## setting parameters for he simulation 
@@ -61,48 +76,43 @@ n_sims <- 50
 maxIter <- n_sims
 
 ## Server function for the app
+
 shinyServer(function(input, output, session) {
-  runSimPlot <- reactive({
-    
-      vals <- reactiveValues(Sam = NULL, SAVEMEANS = NULL, counter = 0)
 
-      # Do the actual computation here.
-      observe({
-        if (input$action %% 2 == 1){
-          isolate({
-            # This is where we do the expensive computing
-            vals$Sam <- sample(Pop,ns)
-            vals$SAVEMEANS <- c(vals$SAVEMEANS, mean(vals$Sam))
-    
-            vals$counter <- vals$counter + 1
-            #print(vals$counter)
-            #print(input$action)
-            
-          })
+  vals <- reactiveValues(Sam = NULL, SAVEMEANS = NULL, counter = 0)
   
-          # If we're not done yet, then schedule this block to execute again ASAP.
-          # Note that we can be interrupted by other reactive updates to, for
-          # instance, update a text output.
-          if (isolate(vals$counter) < maxIter){
-            invalidateLater(250)
-          }
-          
-          return(over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color="red",
-                                               title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-          ##print(input$action)
-        }
-        else {
-          print(input$action)
-          vals$Sam <- NULL
-          vals$SAVEMEANS <- NULL 
-          vals$counter = 0
-          return(over.hist.pop(Pop,step=2,color="red",
-                               title="Overlaid Histograms for Population and Sample",drawmean=TRUE))
-        }
-    })
-  })
+  observe({  
+    runSimPlot <- reactive({
+    # Do the actual computation here.
+      if (input$action %% 2 == 1){
+        isolate({
+          # This is where we do the expensive computing
+          vals$Sam <- sample(Pop,ns)
+          vals$SAVEMEANS <- c(vals$SAVEMEANS, mean(vals$Sam))
+          vals$counter <- vals$counter + 1
+        })
 
-  output$SampleMeanPlot <- renderPlot({
-    runSimPlot() 
+        # If we're not done yet, then schedule this block to execute again ASAP.
+        # Note that we can be interrupted by other reactive updates to, for
+        # instance, update a text output.
+        if (isolate(vals$counter) < maxIter){
+          invalidateLater(250)
+        }
+        
+        plt <- over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color=rgb(1,0,0,alpha=0.5),
+                                             title="Overlaid Histograms for Population and Sample",drawmean=TRUE)
+      }
+      else {
+        print(input$action)
+        vals$Sam <- NULL
+        vals$SAVEMEANS <- NULL 
+        vals$counter = 0
+        plt <- over.hist.pop(Pop,step=2,color="red",
+                             title="Overlaid Histograms for Population and Sample",drawmean=TRUE)
+      }
+    })
+    output$SampleMeanPlot <- renderPlot({
+      runSimPlot() 
+    })
   })
 })

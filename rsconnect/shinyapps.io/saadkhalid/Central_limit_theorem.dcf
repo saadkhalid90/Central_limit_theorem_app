@@ -2,8 +2,8 @@ name: Central_limit_theorem
 account: saadkhalid
 server: shinyapps.io
 appId: 110687
-bundleId: 492797
+bundleId: 493006
 url: https://saadkhalid.shinyapps.io/Central_limit_theorem/
-when: 1467230782.23702
+when: 1467260486.81711
 asMultiple: FALSE
 asStatic: FALSE

@@ -57,5 +57,3 @@ over.hist.pop<-function(Pop,step=5,color="red",title="",drawmean=FALSE){
   
 }
 
-
-#}
