@@ -61,14 +61,14 @@ over.hist.pop<-function(Pop,step=5,color="red",title="",drawmean=FALSE){
   plot(histP,add=TRUE)
 }
 
-## setting parameters for he simulation 
-set.seed(42) # sets the point at which random numbers are read (like in Table B) 
-NP<-100000 # the number of observations in the population
-mu<-3 # the population mean
-sigma<-4 # the population standard deviation
-Pop<-rnorm(NP,mu,sigma)
-Pop<-c(Pop,-Pop)
-ns<-50
+## setting parameters for the simulation 
+# set.seed(42) # sets the point at which random numbers are read (like in Table B) 
+# NP<-100000 # the number of observations in the population
+# mu<-3 # the population mean
+# sigma<-2 # the population standard deviation
+# Pop<-rnorm(NP,mu,sigma)
+# Pop<-c(Pop,-Pop)
+# ns<-50
 
 ## simulation params 
 delay <- 0.25
@@ -84,6 +84,26 @@ shinyServer(function(input, output, session) {
   observe({  
     runSimPlot <- reactive({
     # Do the actual computation here.
+      set.seed(42) # sets the point at which random numbers are read (like in Table B)
+      NP<-100000 # the number of observations in the population
+      mu<-input$mu # the population mean
+      sigma<-input$sigma # the population standard deviation
+      Pop<-rnorm(NP,mu,sigma)
+      ns<-input$samp_size
+      
+      if (input$dist_type == 2){
+        print(input$`mean_bimodal;`)
+        Pop<-c(rnorm(NP/2,input$`mean_bimodal;`[1],input$sigma_1),
+               rnorm(NP/2,input$`mean_bimodal;`[2],input$sigma_2))
+        ns<-input$samp_size_bm
+      }
+      if (input$dist_type == 3){
+        Pop<-runif(NP,min=input$range[1],max=input$range[2])
+        ns<-input$samp_size_uni
+      }
+      #Pop<-c(Pop,-Pop)
+      #ns<-input$samp_size
+      rm(list=".Random.seed", envir=globalenv()) 
       if (input$action %% 2 == 1){
         isolate({
           # This is where we do the expensive computing
@@ -100,7 +120,7 @@ shinyServer(function(input, output, session) {
         }
         
         plt <- over.hist.pop.sample_combined(Pop,isolate(vals$Sam),isolate(vals$SAVEMEANS),step=2,color=rgb(1,0,0,alpha=0.5),
-                                             title="Overlaid Histograms for Population and Sample",drawmean=TRUE)
+                                             title="Overlaid Histograms for Population, Sample and Sample Means",drawmean=TRUE)
       }
       else {
         print(input$action)
